@@ -36,7 +36,7 @@ describe('8.2. Сахарный диабет — метформин', () => {
     expect(finding(a, 'dm.metformin.aki')?.message).toBe(rules.text('dm.metformin.aki'));
   });
 
-  it('метформин требует сверки с И4', () => {
+  it('коррекция дозы метформина — «требует сверки» (граница 30 расходится с И4)', () => {
     expect(finding(run(withEgfr(35, dm)), 'dm.metformin.reduce')?.status).toBe('требует сверки');
   });
 });

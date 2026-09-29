@@ -29,8 +29,11 @@ describe('rules.json', () => {
     }
   });
 
-  it('метформин — «требует сверки»; раздел антибиотиков пуст и «требует сверки»', () => {
-    for (const r of config.rules.filter((x) => x.id.startsWith('dm.metformin.'))) expect(r.status).toBe('требует сверки');
+  it('метформин: граница 30 расходится с [И4] и остаётся «требует сверки»; раздел антибиотиков пуст и «требует сверки»', () => {
+    const status = (id: string) => config.rules.find((r) => r.id === id)?.status;
+    expect(status('dm.metformin.reduce')).toBe('требует сверки');
+    expect(status('dm.metformin.stop')).toBe('требует сверки');
+    for (const r of config.rules.filter((x) => x.id.startsWith('dm.metformin.'))) expect(r.note, r.id).toContain('[И4]');
     const ab = config.rules.find((r) => r.id === 'pneu.antibiotics');
     expect(ab?.value).toEqual([]);
     expect(ab?.status).toBe('требует сверки');
