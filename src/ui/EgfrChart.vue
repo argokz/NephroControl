@@ -92,7 +92,7 @@ function build() {
         x: {
           type: 'linear',
           grid: { color: css('--grid') },
-          ticks: { color: css('--muted'), maxTicksLimit: 6, callback: (v) => date(new Date(Number(v)).toISOString()) },
+          ticks: { color: css('--muted'), maxTicksLimit: 6, maxRotation: 0, autoSkipPadding: 12, callback: (v) => date(new Date(Number(v)).toISOString()) },
         },
         y: {
           min: 0,

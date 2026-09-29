@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { rules } from '../config/rules';
 import { assess } from '../core/assess';
 import type {
@@ -60,6 +60,7 @@ const f = reactive<FormState>(blank());
 const errors = ref<ValidationIssue[]>([]);
 const warnings = ref<ValidationIssue[]>([]);
 const showOptional = ref(false);
+const formEl = ref<HTMLFormElement>();
 
 // При выборе пациента подставляем пол, группы и антропометрию из последнего анализа.
 watch(
@@ -108,12 +109,21 @@ function draft(): MeasurementDraft {
   return d;
 }
 
-function submit() {
+async function submit() {
   const r = assess(draft(), props.history, rules);
   warnings.value = r.warnings;
   if (!r.ok) {
     errors.value = r.errors;
     emit('invalid');
+    // Фокус на первое поле с ошибкой — на телефоне оно может быть за пределами экрана.
+    await nextTick();
+    const first = formEl.value?.querySelector<HTMLElement>('.invalid input, .invalid select');
+    if (first) {
+      if (first.closest('details')) showOptional.value = true;
+      await nextTick();
+      first.focus({ preventScroll: true });
+      first.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
     return;
   }
   errors.value = [];
@@ -122,7 +132,7 @@ function submit() {
 </script>
 
 <template>
-  <form class="card form" novalidate @submit.prevent="submit">
+  <form ref="formEl" class="card form" novalidate @submit.prevent="submit">
     <h2>Данные анализа</h2>
 
     <div v-if="isMinor" class="alert alert-emergency" role="alert">
@@ -133,7 +143,7 @@ function submit() {
       <label class="field span-2" :class="{ invalid: errorFor('creatinine') }">
         <span>Креатинин крови <b class="req">*</b></span>
         <div class="with-unit">
-          <input v-model="f.creatinine" inputmode="decimal" autocomplete="off" placeholder="например, 106" />
+          <input v-model="f.creatinine" inputmode="decimal" autocomplete="off" enterkeyhint="next" placeholder="например, 106" />
           <select v-model="f.creatinineUnit" aria-label="Единица креатинина">
             <option value="umol/L">мкмоль/л</option>
             <option value="mg/dL">мг/дл</option>
@@ -151,21 +161,21 @@ function submit() {
 
       <label class="field" :class="{ invalid: errorFor('ageYears') }">
         <span>Возраст, лет <b class="req">*</b></span>
-        <input v-model="f.age" inputmode="decimal" autocomplete="off" />
+        <input v-model="f.age" inputmode="numeric" autocomplete="off" enterkeyhint="next" />
         <small v-if="errorFor('ageYears') && !isMinor" class="err">{{ errorFor('ageYears') }}</small>
       </label>
 
       <label class="field" :class="{ invalid: errorFor('weightKg') }">
         <span>Масса тела, кг <b class="req">*</b></span>
-        <input v-model="f.weight" inputmode="decimal" autocomplete="off" />
+        <input v-model="f.weight" inputmode="decimal" autocomplete="off" enterkeyhint="next" />
         <small v-if="errorFor('weightKg')" class="err">{{ errorFor('weightKg') }}</small>
       </label>
 
       <fieldset class="field" :class="{ invalid: errorFor('sex') }">
         <legend>Пол <b class="req">*</b></legend>
-        <div class="segmented">
-          <label><input v-model="f.sex" type="radio" value="male" /> Мужской</label>
-          <label><input v-model="f.sex" type="radio" value="female" /> Женский</label>
+        <div class="seg">
+          <label><input v-model="f.sex" type="radio" value="male" /><span>Мужской</span></label>
+          <label><input v-model="f.sex" type="radio" value="female" /><span>Женский</span></label>
         </div>
         <small v-if="errorFor('sex')" class="err">{{ errorFor('sex') }}</small>
       </fieldset>
@@ -186,7 +196,7 @@ function submit() {
       <div class="grid">
         <label class="field" :class="{ invalid: errorFor('heightCm') }">
           <span>Рост, см</span>
-          <input v-model="f.height" inputmode="decimal" autocomplete="off" />
+          <input v-model="f.height" inputmode="decimal" autocomplete="off" enterkeyhint="next" />
           <small v-if="errorFor('heightCm')" class="err">{{ errorFor('heightCm') }}</small>
           <small v-else class="hint">нужен для ИМТ и скорректированной массы</small>
         </label>
@@ -194,7 +204,7 @@ function submit() {
         <label class="field" :class="{ invalid: errorFor('acr') }">
           <span>САК (альбумин/креатинин мочи)</span>
           <div class="with-unit">
-            <input v-model="f.acr" inputmode="decimal" autocomplete="off" />
+            <input v-model="f.acr" inputmode="decimal" autocomplete="off" enterkeyhint="next" />
             <select v-model="f.acrUnit" aria-label="Единица САК">
               <option value="mg/g">мг/г</option>
               <option value="mg/mmol">мг/ммоль</option>
@@ -205,7 +215,7 @@ function submit() {
 
         <label class="field" :class="{ invalid: errorFor('ureaMmolL') }">
           <span>Мочевина крови, ммоль/л</span>
-          <input v-model="f.urea" inputmode="decimal" autocomplete="off" />
+          <input v-model="f.urea" inputmode="decimal" autocomplete="off" enterkeyhint="done" />
           <small v-if="errorFor('ureaMmolL')" class="err">{{ errorFor('ureaMmolL') }}</small>
         </label>
       </div>
@@ -221,8 +231,8 @@ function submit() {
     </details>
 
     <div class="actions">
-      <button type="submit" class="primary">Рассчитать</button>
-      <span v-if="errors.length" class="err">Исправьте отмеченные поля</span>
+      <button type="submit" class="primary block-mobile">Рассчитать</button>
+      <span v-if="errors.length" class="err" role="alert">Исправьте отмеченные поля</span>
     </div>
   </form>
 </template>

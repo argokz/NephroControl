@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { Assessment, ValidationIssue } from '../core/types';
+import type { Assessment, Severity, ValidationIssue } from '../core/types';
 import Disclaimer from './Disclaimer.vue';
 import FindingList from './FindingList.vue';
-import { alb, date, dateTime, interval, num, risk, stage, weightBasis } from './format';
+import { SEVERITY_LABELS, alb, date, dateTime, interval, num, risk, stage, weightBasis } from './format';
 
 const props = defineProps<{
   assessment: Assessment;
@@ -15,6 +15,12 @@ const props = defineProps<{
 defineEmits<{ save: [] }>();
 
 const a = computed(() => props.assessment);
+// Сводка по экстренным и важным предупреждениям — видна сразу, без прокрутки до списка.
+const severityCounts = computed(() =>
+  (['emergency', 'important'] as Severity[])
+    .map((s) => ({ s, n: a.value.findings.filter((f) => f.severity === s).length }))
+    .filter((x) => x.n > 0),
+);
 const extraCrcl = computed(() => a.value.crclVariants.filter((c) => c !== a.value.crcl));
 const creatinineText = computed(() => {
   const c = a.value.input.creatinine;
@@ -25,10 +31,15 @@ const creatinineText = computed(() => {
 </script>
 
 <template>
-  <section class="card result" aria-live="polite">
+  <section class="card result" aria-live="polite" tabindex="-1">
     <header class="result-head">
       <h2>Результат расчёта</h2>
       <p class="muted">Анализ от {{ dateTime(a.input.sampledAt) }} · креатинин {{ creatinineText }}</p>
+      <p v-if="severityCounts.length" class="sev-summary">
+        <a v-for="x in severityCounts" :key="x.s" href="#findings" class="sev-pill" :class="`sev-pill-${x.s}`">
+          {{ SEVERITY_LABELS[x.s] }}: {{ x.n }}
+        </a>
+      </p>
     </header>
 
     <div v-for="w in warnings" :key="w.ruleId" class="alert alert-important">{{ w.message }}</div>
@@ -89,11 +100,11 @@ const creatinineText = computed(() => {
       </div>
     </dl>
 
-    <h3 class="section-title">Предупреждения</h3>
+    <h3 id="findings" class="section-title">Предупреждения</h3>
     <FindingList :findings="a.findings" />
 
-    <div class="actions no-print">
-      <button v-if="canSave" type="button" class="primary" :disabled="saved" @click="$emit('save')">
+    <div class="actions result-actions no-print">
+      <button v-if="canSave" type="button" class="primary block-mobile" :disabled="saved" @click="$emit('save')">
         {{ saved ? 'Сохранено в историю' : 'Сохранить в историю пациента' }}
       </button>
       <span v-else class="muted">Выберите или создайте пациента, чтобы сохранить результат.</span>

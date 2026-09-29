@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 import { toHistoryRecord } from './core/record';
 import type { Assessment, HistoryRecord, Patient, ValidationIssue } from './core/types';
 import * as store from './storage/db';
@@ -54,8 +54,17 @@ async function deletePatient(id: string) {
   if (selectedId.value === id) await select(null);
 }
 
-function onComputed(assessment: Assessment, warnings: ValidationIssue[]) {
+const resultEl = ref<InstanceType<typeof ResultView>>();
+
+async function onComputed(assessment: Assessment, warnings: ValidationIssue[]) {
   result.value = { assessment, warnings, saved: false };
+  // В одну колонку результат оказывается под формой — показываем его.
+  if (window.matchMedia('(max-width: 1100px)').matches) {
+    await nextTick();
+    const el = resultEl.value?.$el as HTMLElement | undefined;
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    el?.focus({ preventScroll: true });
+  }
 }
 
 async function save() {
@@ -118,7 +127,7 @@ onMounted(reloadPatients);
     />
 
     <main>
-      <div class="tabs no-print" role="tablist">
+      <div class="tabs no-print" role="tablist" aria-label="Разделы">
         <button type="button" role="tab" :aria-selected="tab === 'calc'" :class="{ active: tab === 'calc' }" @click="tab = 'calc'">
           Расчёт
         </button>
@@ -131,7 +140,8 @@ onMounted(reloadPatients);
           :title="patient ? '' : 'Выберите пациента'"
           @click="tab = 'history'"
         >
-          История и динамика <span v-if="patient" class="count">{{ records.length }}</span>
+          <span class="tab-long">История и динамика</span><span class="tab-short">История</span>
+          <span v-if="patient" class="count">{{ records.length }}</span>
         </button>
         <span v-if="patient" class="current-patient">Пациент: <strong>{{ patient.label }}</strong></span>
       </div>
@@ -140,6 +150,7 @@ onMounted(reloadPatients);
         <MeasurementForm :key="selectedId ?? 'none'" class="no-print" :patient="patient" :history="records" @computed="onComputed" @invalid="result = null" />
         <ResultView
           v-if="result"
+          ref="resultEl"
           :assessment="result.assessment"
           :warnings="result.warnings"
           :can-save="!!patient"
