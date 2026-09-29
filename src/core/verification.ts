@@ -192,7 +192,7 @@ export function runSelfCheck(rules: RuleBook): CheckResult[] {
   expectRule(G4, 'Пневмония: креатинин 176 мкмоль/л', run({ ...pneu, creatinine: umol(176) }), 'pneu.creatinine', false);
   const metformin: [number, RuleId][] = [
     [60, 'dm.metformin.noLimit'], [59, 'dm.metformin.consider'], [45, 'dm.metformin.consider'],
-    [44, 'dm.metformin.reduce'], [30, 'dm.metformin.reduce'], [29, 'dm.metformin.stop'],
+    [44, 'dm.metformin.reduce'], [31, 'dm.metformin.reduce'], [30, 'dm.metformin.stop'], [29, 'dm.metformin.stop'],
   ];
   for (const [egfr, id] of metformin) {
     const a = run(withEgfr(egfr, { groups: ['diabetes'] }));

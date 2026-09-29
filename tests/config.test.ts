@@ -29,10 +29,10 @@ describe('rules.json', () => {
     }
   });
 
-  it('метформин: граница 30 расходится с [И4] и остаётся «требует сверки»; раздел антибиотиков пуст и «требует сверки»', () => {
-    const status = (id: string) => config.rules.find((r) => r.id === id)?.status;
-    expect(status('dm.metformin.reduce')).toBe('требует сверки');
-    expect(status('dm.metformin.stop')).toBe('требует сверки');
+  it('метформин сверен с [И4]: отмена при eGFR ≤ 30; раздел антибиотиков пуст и «требует сверки»', () => {
+    const value = (id: string) => config.rules.find((r) => r.id === id)?.value;
+    expect(value('dm.metformin.stop')).toEqual({ max: 30 });
+    expect(value('dm.metformin.reduce')).toEqual({ min: 31, max: 44 });
     for (const r of config.rules.filter((x) => x.id.startsWith('dm.metformin.'))) expect(r.note, r.id).toContain('[И4]');
     const ab = config.rules.find((r) => r.id === 'pneu.antibiotics');
     expect(ab?.value).toEqual([]);

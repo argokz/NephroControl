@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { CITATIONS, SOURCE_DOCUMENTS, citationsFor, type Citation } from '../config/evidence';
 import { rules, rulesConfig } from '../config/rules';
 import type { AlbCategory, CkdStage, IntervalSpec, RiskLevel, Rule, SourceId } from '../core/types';
 import { STAGES_ORDER } from '../core/types';
 import { runSelfCheck, type CheckResult } from '../core/verification';
 import Disclaimer from './Disclaimer.vue';
 import GithubLink from './GithubLink.vue';
+import SourceRef from './SourceRef.vue';
 import { interval, num, risk, stage } from './format';
 
 // ---------- самопроверка: выполняется в браузере тем же кодом, что и расчёт ----------
@@ -70,6 +72,19 @@ const reviewRules = rulesConfig.rules.filter((r) => r.status === 'требует
 const assumptions = rulesConfig.rules.filter((r) => r.note?.includes('Допущение:')).length;
 const sources = Object.entries(rulesConfig.sources) as [SourceId, string][];
 const rulesBySource = (id: SourceId) => rulesConfig.rules.filter((r) => r.source.includes(id)).length;
+
+// ---------- подтверждения: страницы официальных PDF (src/config/evidence.ts) ----------
+const uniquePages = (cs: Citation[]) => cs.filter((c, i) => cs.findIndex((x) => x.source === c.source && x.page === c.page) === i);
+const supportOf = (id: string) => uniquePages(citationsFor(id).filter((c) => !c.differs));
+const differsOf = (id: string) => uniquePages(citationsFor(id).filter((c) => c.differs));
+const sourceCards = sources.map(([id, title]) => ({
+  id,
+  title,
+  doc: SOURCE_DOCUMENTS[id],
+  cites: CITATIONS.filter((c) => c.source === id),
+  rules: rulesBySource(id),
+}));
+const withoutPage = rulesConfig.rules.filter((r) => supportOf(r.id).length === 0).length;
 
 function valueText(r: Rule): string {
   const v = r.value as unknown;
@@ -180,7 +195,7 @@ const TOC = [
       <p class="muted small">Scr — креатинин сыворотки в мг/дл; возраст — в годах; масса — в кг; рост — в см.</p>
 
       <div class="formula-card primary">
-        <h4>CKD-EPI 2009 — основная <span class="src">[И1]</span></h4>
+        <h4>CKD-EPI 2009 — основная <span class="src"><SourceRef :c="{ source: 'И1', page: 5 }" /></span></h4>
         <p class="eq">
           eGFR = 141 × min(Scr/κ, 1)<sup>α</sup> × max(Scr/κ, 1)<sup>−1,209</sup> × 0,993<sup>возраст</sup> × 1,018
           <span class="muted">[если женщина]</span>
@@ -193,12 +208,13 @@ const TOC = [
       </div>
 
       <div class="formula-card">
-        <h4>CKD-EPI 2021 — справочно <span class="src">[И8]</span></h4>
+        <h4>CKD-EPI 2021 — справочно <span class="src"><SourceRef :c="{ source: 'И8', page: 73 }" /></span></h4>
         <p class="eq">
           eGFR = 142 × min(Scr/κ, 1)<sup>α</sup> × max(Scr/κ, 1)<sup>−1,200</sup> × 0,9938<sup>возраст</sup> × 1,012
           <span class="muted">[если женщина]</span>
         </p>
         <p class="coef">κ = 0,7 (ж) / 0,9 (м); α = −0,241 (ж) / −0,302 (м). Если стадия по 2021 отличается от стадии по 2009, выводится пояснение.</p>
+        <p class="muted small">Расу при расчёте eGFR использовать не рекомендуется — <SourceRef :c="{ source: 'И8', page: 39 }" />.</p>
       </div>
 
       <div class="formula-card">
@@ -223,7 +239,7 @@ const TOC = [
 
     <!-- 4 -->
     <section id="about-classification" class="about-section">
-      <h3>Классификация и контроль <span class="src">[И1]</span></h3>
+      <h3>Классификация и контроль <span class="src"><SourceRef :c="{ source: 'И1', page: 6 }" /> <SourceRef :c="{ source: 'И1', page: 35 }" /></span></h3>
       <p class="muted small">Таблицы ниже строятся из действующего файла правил — это те же значения, по которым идёт расчёт.</p>
       <div class="tables">
         <div class="table-wrap">
@@ -285,17 +301,18 @@ const TOC = [
     <section id="about-rules" class="about-section">
       <h3>Правила и предупреждения</h3>
       <ul class="plain rules-summary">
-        <li><strong>Формула недостоверна</strong> [И1] — ИМТ &lt; 15 или &gt; 40, беременность, ампутации, бодибилдинг, миодистрофия, плегия, вегетарианство, трансплантат, токсичные препараты, решение о ЗПТ, ОПП, быстрое снижение функции → рекомендуется проба Реберга–Тареева.</li>
-        <li><strong>Госпитализация</strong> [И1] — впервые СКФ &lt; 30; креатинин &gt; 250 (м) / &gt; 200 (ж) мкмоль/л; удвоение креатинина менее чем за 2 месяца — экстренно.</li>
-        <li><strong>ОПП</strong> [И2, И5] — прирост ≥ 26,5 мкмоль/л за 48 ч или ≥ 1,5 раза от минимума за 7 суток.</li>
+        <li><strong>Формула недостоверна</strong> <SourceRef :c="{ source: 'И1', page: 9 }" /> — ИМТ &lt; 15 или &gt; 40, беременность, ампутации, бодибилдинг, миодистрофия, плегия, вегетарианство, трансплантат, токсичные препараты, решение о ЗПТ, ОПП, быстрое снижение функции → рекомендуется проба Реберга–Тареева.</li>
+        <li><strong>Госпитализация</strong> <SourceRef :c="{ source: 'И1', page: 35 }" /> <SourceRef :c="{ source: 'И1', page: 36 }" /> — впервые СКФ &lt; 30; креатинин &gt; 250 (м) / &gt; 200 (ж) мкмоль/л; удвоение креатинина менее чем за 2 месяца — экстренно.</li>
+        <li><strong>ОПП</strong> <SourceRef :c="{ source: 'И2', page: 5 }" /> <SourceRef :c="{ source: 'И5', page: 11 }" /> — прирост ≥ 26,5 мкмоль/л за 48 ч или ≥ 1,5 раза от минимума за 7 суток.</li>
         <li><strong>Пиелонефрит</strong> — снижение СКФ к предыдущему анализу, напоминание о коррекции доз по CrCl.</li>
-        <li><strong>Диабет</strong> [И4, И6, И7] — пороги метформина 60 / 45 / 30, иНГЛТ-2 с СКФ ≥ 20, напоминание о САК и об ИМТ ≥ 30.</li>
-        <li><strong>Пневмония</strong> [И3] — нестабильность креатинина, мочевина &gt; 7,0 ммоль/л, креатинин &gt; 176 мкмоль/л, обязательная проверка ОПП, CrCl для антибиотиков.</li>
+        <li><strong>Диабет</strong> <SourceRef :c="{ source: 'И4', page: 10 }" /> <SourceRef :c="{ source: 'И6', page: 27 }" /> <SourceRef :c="{ source: 'И7', page: 2 }" /> <SourceRef :c="{ source: 'И1', page: 18 }" /> — метформин: ≥ 60 без ограничений, 45–59 рассмотреть коррекцию, 31–44 коррекция дозы, ≤ 30 рекомендуется отмена; иНГЛТ-2 с СКФ ≥ 20, напоминание о САК и об ИМТ ≥ 30.</li>
+        <li><strong>Пневмония</strong> <SourceRef :c="{ source: 'И3', page: 5 }" /> <SourceRef :c="{ source: 'И3', page: 19 }" /> <SourceRef :c="{ source: 'И8', page: 50 }" /> — нестабильность креатинина, мочевина &gt; 7,0 ммоль/л, креатинин &gt; 176 мкмоль/л, обязательная проверка ОПП, CrCl для антибиотиков.</li>
         <li><strong>Динамика</strong> — «значимое ухудшение»: снижение ≥ 25 % от исходного со сменой стадии; «улучшение»: переход в более благоприятную стадию.</li>
       </ul>
       <p class="muted small">
         Всего правил: {{ totalRules }}, из них «требует сверки»: {{ reviewRules }} (в том числе допущений: {{ assumptions }}).
-        Полный список с порогами, источниками и статусами:
+        Полный список с порогами, источниками, страницами и статусами (без ссылки на страницу — {{ withoutPage }}: это
+        технические проверки ввода и допущения, которых в источниках нет):
       </p>
       <details v-for="g in ruleGroups" :key="g.title" class="rule-group">
         <summary>{{ g.title }} <span class="count">{{ g.items.length }}</span></summary>
@@ -306,6 +323,8 @@ const TOC = [
               <code>{{ r.id }}</code>
               <span>значение: {{ valueText(r) }}<template v-if="r.unit"> {{ r.unit }}</template></span>
               <span>источник: {{ r.source.map((s) => `[${s}]`).join(', ') }}</span>
+              <span v-if="supportOf(r.id).length" class="refs">страницы: <SourceRef v-for="c in supportOf(r.id)" :key="c.source + c.page" :c="c" /></span>
+              <span v-if="differsOf(r.id).length" class="refs">расходится: <SourceRef v-for="c in differsOf(r.id)" :key="c.source + c.page" :c="c" /></span>
               <span :class="r.status === 'требует сверки' ? 'badge' : 'badge-ok'">{{ r.status }}</span>
             </p>
             <p v-if="r.note" class="rule-note">{{ r.note }}</p>
@@ -316,22 +335,33 @@ const TOC = [
 
     <!-- 6 -->
     <section id="about-sources" class="about-section">
-      <h3>Источники</h3>
-      <div class="table-wrap">
-        <table class="sources">
-          <thead><tr><th>№</th><th>Источник</th><th class="num">Правил</th></tr></thead>
-          <tbody>
-            <tr v-for="[id, title] in sources" :key="id">
-              <th scope="row">{{ id }}</th>
-              <td>{{ title }}</td>
-              <td class="num">{{ rulesBySource(id) }}</td>
-            </tr>
-          </tbody>
-        </table>
+      <h3>Источники и подтверждения</h3>
+      <p class="muted small">
+        Для каждого источника — официальный PDF и страницы, на которых стоят пороги и формулировки правил. Номера
+        страниц — по PDF-файлу, ссылка открывает нужную страницу. Пересказ, а не цитата; дозы препаратов не приводятся.
+        Сверено 29.09.2026.
+      </p>
+      <div class="source-cards">
+        <article v-for="s in sourceCards" :key="s.id" class="source-card">
+          <h4><span class="source-id">{{ s.id }}</span> {{ s.title }}</h4>
+          <p class="meta">
+            <span>{{ s.doc.publisher }}</span>
+            <span>PDF, {{ s.doc.pages }} с.</span>
+            <span>правил: {{ s.rules }}</span>
+            <a class="pdf-link" :href="s.doc.url" target="_blank" rel="noopener noreferrer">Открыть PDF ↗</a>
+          </p>
+          <p v-if="s.doc.note" class="rule-note">{{ s.doc.note }}</p>
+          <ul class="cite-list">
+            <li v-for="(c, i) in s.cites" :key="i" :class="{ differs: c.differs }">
+              <SourceRef :c="c" />
+              <span class="cite-text">{{ c.text }}<span v-if="c.differs" class="badge">расходится</span></span>
+              <span v-if="c.rules.length" class="cite-rules"><code v-for="id in c.rules" :key="id">{{ id }}</code></span>
+            </li>
+          </ul>
+        </article>
       </div>
       <p class="muted small">
-        Используются только эти источники. При противоречии приоритет у клинических протоколов МЗ РК, затем KDIGO. В ТЗ
-        [И4] указан как протокол 2021 года; сверка выполнена по действующей редакции (ОКК МЗ РК 04.03.2022, протокол №158).
+        Используются только эти источники. При противоречии приоритет у клинических протоколов МЗ РК, затем KDIGO.
       </p>
     </section>
 
@@ -422,7 +452,9 @@ const TOC = [
         <li><strong>Дата анализа хранится с временем</strong> — правило ОПП использует окно 48 ч.</li>
         <li><strong>Хронический пиелонефрит:</strong> действующего взрослого протокола МЗ РК нет; функция почек оценивается по [И1], порог снижения СКФ не задан.</li>
         <li><strong>Антибиотики при пневмонии:</strong> в [И3] пороги CrCl для конкретных препаратов не приведены — раздел не заполнен.</li>
-        <li><strong>Метформин при СКФ ровно 30:</strong> [И4] — «противопоказан при СКФ ≤ 30», [И6] и [И7] — допустим с коррекцией дозы. Оставлено как в ТЗ (30 — коррекция дозы, 29 — отмена), правила коррекции и отмены — «требует сверки».</li>
+        <li><strong>Метформин при СКФ ровно 30</strong> — по [И4] («противопоказан при СКФ ≤ 30», <SourceRef :c="{ source: 'И4', page: 10 }" />): рекомендуется отмена при eGFR ≤ 30, коррекция дозы — 31–44. [И6], [И7] и граница ТЗ 30/29 допускали 30 с коррекцией дозы; по решению от 29.09.2026 применён приоритет КП МЗ РК.</li>
+        <li><strong>Пневмония [И3]:</strong> в тексте протокола нет формулировок о нестабильности креатинина и о дозировании по Кокрофту–Голту. Первая подтверждается <SourceRef :c="{ source: 'И1', page: 9 }" /> и <SourceRef :c="{ source: 'И8', page: 50 }" />; вторая — «требует сверки» (<SourceRef :c="{ source: 'И8', page: 49 }" />).</li>
+        <li><strong>Редакции протоколов:</strong> в ТЗ [И2] указан как протокол 2019 года, [И4] — 2021 года; сверка выполнена по действующим редакциям (№141 от 24.06.2021 и №158 от 04.03.2022).</li>
         <li><strong>Требования [И4] вне ТЗ</strong> (отмена метформина при ОКС, до и после рентгеноконтрастных процедур и больших операций) не проверяются: правила вне ТЗ не добавляются.</li>
       </ol>
     </section>

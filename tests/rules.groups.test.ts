@@ -13,7 +13,8 @@ describe('8.2. Сахарный диабет — метформин', () => {
     [59, 'dm.metformin.consider'],
     [45, 'dm.metformin.consider'],
     [44, 'dm.metformin.reduce'],
-    [30, 'dm.metformin.reduce'],
+    [31, 'dm.metformin.reduce'],
+    [30, 'dm.metformin.stop'],
     [29, 'dm.metformin.stop'],
   ];
   for (const [egfr, id] of cases) {
@@ -36,8 +37,9 @@ describe('8.2. Сахарный диабет — метформин', () => {
     expect(finding(a, 'dm.metformin.aki')?.message).toBe(rules.text('dm.metformin.aki'));
   });
 
-  it('коррекция дозы метформина — «требует сверки» (граница 30 расходится с И4)', () => {
-    expect(finding(run(withEgfr(35, dm)), 'dm.metformin.reduce')?.status).toBe('требует сверки');
+  it('eGFR 30 — отмена метформина по [И4] («противопоказан при СКФ ≤ 30»)', () => {
+    expect(finding(run(withEgfr(30, dm)), 'dm.metformin.stop')?.message).toBe(rules.text('dm.metformin.stop'));
+    expect(has(run(withEgfr(30, dm)), 'dm.metformin.reduce')).toBe(false);
   });
 });
 

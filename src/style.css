@@ -503,7 +503,31 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .rule-list .meta code { font-size: 0.75rem; }
 .rule-note { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
 .badge-ok { border: 1px solid var(--ok); color: var(--ok); border-radius: 999px; padding: 0 7px; font-size: 0.72rem; white-space: nowrap; }
-.sources td { font-size: 0.87rem; }
+.source-ref {
+  display: inline-block; white-space: nowrap; padding: 0 6px; border-radius: 999px; border: 1px solid var(--accent);
+  color: var(--accent); background: var(--surface); font-size: 0.78rem; font-weight: 500; line-height: 1.5; text-decoration: none;
+}
+.source-ref + .source-ref { margin-left: 3px; }
+.source-ref.differs { border-color: var(--important); color: var(--important); }
+@media (hover: hover) { .source-ref:hover { background: var(--accent-soft); } .source-ref.differs:hover { background: var(--important-soft); } }
+@media (pointer: coarse) { .source-ref { padding: 2px 8px; } }
+.refs { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 3px; }
+.source-cards { display: flex; flex-direction: column; gap: 10px; }
+.source-card { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.source-card h4 { margin: 0; font-size: 0.93rem; }
+.source-id { display: inline-block; min-width: 2.2em; padding: 0 6px; margin-right: 4px; border-radius: 6px; background: var(--accent); color: var(--accent-contrast); text-align: center; font-size: 0.82rem; }
+.pdf-link { font-weight: 600; color: var(--accent); white-space: nowrap; }
+.cite-list { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; }
+.cite-list li { display: grid; grid-template-columns: 5.2rem minmax(0, 1fr); gap: 2px 10px; padding: 7px 0; border-top: 1px solid var(--border); font-size: 0.86rem; }
+.cite-list li.differs .cite-text { color: var(--important); }
+.cite-list .source-ref { justify-self: start; align-self: start; }
+.cite-text .badge { margin-left: 6px; }
+.cite-rules { grid-column: 2; display: flex; flex-wrap: wrap; gap: 4px; }
+.cite-rules code { font-size: 0.72rem; color: var(--muted); background: var(--surface-2); border-radius: 4px; padding: 0 4px; }
+@media (max-width: 480px) {
+  .cite-list li { grid-template-columns: minmax(0, 1fr); }
+  .cite-rules { grid-column: 1; }
+}
 .check-summary { display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; padding: 12px 14px; border-radius: var(--radius-sm); border-left: 4px solid; }
 .check-summary strong { flex: 1 1 260px; }
 .check-summary.pass { background: color-mix(in srgb, var(--ok) 12%, var(--surface)); border-color: var(--ok); }
