@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { historyToCsv } from '../src/core/csv';
-import { record, rules } from './helpers';
+import { toHistoryRecord } from '../src/core/record';
+import { record, rules, run } from './helpers';
 
 describe('запись истории и CSV', () => {
   it('запись содержит все поля раздела 9', () => {
@@ -15,6 +16,13 @@ describe('запись истории и CSV', () => {
     expect(r.stage).toBe('C2');
     expect(r.firedRuleIds).toContain('ckd.singleMeasurement');
     expect(r.rulesVersion).toBe(rules.version);
+  });
+
+  it('запись создаётся из результата, обёрнутого в прокси (реактивное состояние UI)', () => {
+    const a = run();
+    const proxied = new Proxy({ ...a, input: new Proxy(a.input, {}) }, {});
+    const r = toHistoryRecord(proxied, 'p1', 'x', '2026-01-01T00:00:00Z');
+    expect(r.input).toEqual(a.input);
   });
 
   it('CSV: заголовок, «;», десятичная запятая, сортировка по дате', () => {
