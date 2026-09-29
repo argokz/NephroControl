@@ -1,19 +1,29 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { toHistoryRecord } from './core/record';
 import type { Assessment, HistoryRecord, Patient, ValidationIssue } from './core/types';
 import * as store from './storage/db';
+import AboutView from './ui/AboutView.vue';
+import GithubLink from './ui/GithubLink.vue';
 import HistoryView from './ui/HistoryView.vue';
 import MeasurementForm from './ui/MeasurementForm.vue';
 import PatientPanel from './ui/PatientPanel.vue';
 import ResultView from './ui/ResultView.vue';
 
-type Tab = 'calc' | 'history';
+type Tab = 'calc' | 'history' | 'about';
 
 const patients = ref<Patient[]>([]);
 const selectedId = ref<string | null>(null);
 const records = ref<HistoryRecord[]>([]);
-const tab = ref<Tab>('calc');
+// Страница «О программе» открывается и по ссылке с #about (например, из README).
+const tab = ref<Tab>(location.hash.startsWith('#about') ? 'about' : 'calc');
+watch(tab, (t) => {
+  if (t === 'about') history.replaceState(null, '', '#about');
+  else if (location.hash.startsWith('#about')) history.replaceState(null, '', location.pathname + location.search);
+});
+window.addEventListener('hashchange', () => {
+  if (location.hash.startsWith('#about')) tab.value = 'about';
+});
 const result = ref<{ assessment: Assessment; warnings: ValidationIssue[]; saved: boolean } | null>(null);
 const storageError = ref('');
 
@@ -38,7 +48,7 @@ async function select(id: string | null) {
   records.value = id ? ((await guard(() => store.listRecords(id))) ?? []) : [];
   selectedId.value = id;
   result.value = null;
-  if (!id) tab.value = 'calc';
+  if (!id && tab.value === 'history') tab.value = 'calc';
 }
 
 async function createPatient(p: Omit<Patient, 'id' | 'createdAt'>) {
@@ -106,7 +116,10 @@ onMounted(reloadPatients);
         <p>Калькулятор СКФ для контроля лечения</p>
       </div>
     </div>
-    <p class="header-note">Поддержка решений · не заменяет решение врача</p>
+    <div class="header-side">
+      <p class="header-note">Поддержка решений · не заменяет решение врача</p>
+      <GithubLink class="header-github no-print" />
+    </div>
   </header>
 
   <div class="print-only print-head">
@@ -143,6 +156,15 @@ onMounted(reloadPatients);
           <span class="tab-long">История и динамика</span><span class="tab-short">История</span>
           <span v-if="patient" class="count">{{ records.length }}</span>
         </button>
+        <button
+          type="button"
+          role="tab"
+          :aria-selected="tab === 'about'"
+          :class="{ active: tab === 'about' }"
+          @click="tab = 'about'"
+        >
+          О программе
+        </button>
         <span v-if="patient" class="current-patient">Пациент: <strong>{{ patient.label }}</strong></span>
       </div>
 
@@ -165,6 +187,7 @@ onMounted(reloadPatients);
         </section>
       </div>
 
+      <AboutView v-if="tab === 'about'" />
       <HistoryView v-if="tab === 'history' && patient" :patient="patient" :records="records" @delete="deleteRecord" />
     </main>
   </div>

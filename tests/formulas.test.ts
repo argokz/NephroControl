@@ -3,40 +3,11 @@ import raw from '../src/config/rules.json';
 import { ckdEpi2009 } from '../src/core/formulas/ckdEpi2009';
 import { ckdEpi2021 } from '../src/core/formulas/ckdEpi2021';
 import { bodyMassIndex, idealBodyWeightDevine } from '../src/core/formulas/cockcroftGault';
-import type { MeasurementDraft } from '../src/core/types';
+import { REFERENCE_CASES } from '../src/core/verification';
 import { finding, has, rules, run } from './helpers';
 
-// Эталоны ТЗ, раздел 13 (допуск ±1).
-const REFERENCE: {
-  name: string;
-  draft: MeasurementDraft;
-  egfr2009: number;
-  stage: string;
-  egfr2021: number;
-  stage2021: string;
-  crcl: number;
-}[] = [
-  {
-    name: '1: М, 60 л, 70 кг, 106 мкмоль/л',
-    draft: { sex: 'male', ageYears: 60, weightKg: 70, creatinine: { value: 106, unit: 'umol/L' } },
-    egfr2009: 65, stage: 'C2', egfr2021: 69, stage2021: 'C2', crcl: 65,
-  },
-  {
-    name: '2: Ж, 45 л, 60 кг, 71 мкмоль/л',
-    draft: { sex: 'female', ageYears: 45, weightKg: 60, creatinine: { value: 71, unit: 'umol/L' } },
-    egfr2009: 89, stage: 'C2', egfr2021: 93, stage2021: 'C1', crcl: 84,
-  },
-  {
-    name: '3: М, 30 л, 80 кг, 0,70 мг/дл (ветка Scr/κ < 1)',
-    draft: { sex: 'male', ageYears: 30, weightKg: 80, creatinine: { value: 0.7, unit: 'mg/dL' } },
-    egfr2009: 127, stage: 'C1', egfr2021: 127, stage2021: 'C1', crcl: 175,
-  },
-  {
-    name: '4: Ж, 70 л, 65 кг, 133 мкмоль/л, СД',
-    draft: { sex: 'female', ageYears: 70, weightKg: 65, creatinine: { value: 133, unit: 'umol/L' }, groups: ['diabetes'] },
-    egfr2009: 35, stage: 'C3b', egfr2021: 37, stage2021: 'C3b', crcl: 36,
-  },
-];
+// Эталоны ТЗ, раздел 13 (допуск ±1) — общие с самопроверкой на странице «О программе».
+const REFERENCE = REFERENCE_CASES;
 
 describe('эталонные значения (раздел 13)', () => {
   for (const c of REFERENCE) {

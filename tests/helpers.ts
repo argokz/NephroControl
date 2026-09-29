@@ -2,7 +2,7 @@ import { rules } from '../src/config/rules';
 import { assess, type AssessOptions } from '../src/core/assess';
 import { toHistoryRecord } from '../src/core/record';
 import type { RuleId } from '../src/core/ruleBook';
-import type { Assessment, HistoryRecord, MeasurementDraft, Sex } from '../src/core/types';
+import type { Assessment, HistoryRecord, MeasurementDraft } from '../src/core/types';
 
 export { rules };
 
@@ -39,18 +39,4 @@ export function isoPlusHours(iso: string, hours: number): string {
   return new Date(new Date(iso).getTime() + hours * 3_600_000).toISOString();
 }
 
-/**
- * Обратная CKD-EPI 2009: креатинин (мг/дл), при котором eGFR равна target.
- * Нужна для граничных тестов порогов СКФ (ветка Scr/κ > 1).
- */
-export function scrForEgfr2009(target: number, age: number, sex: Sex): number {
-  const female = sex === 'female';
-  const kappa = female ? 0.7 : 0.9;
-  const k = 141 * 0.993 ** age * (female ? 1.018 : 1);
-  return kappa * (target / k) ** (-1 / 1.209);
-}
-
-/** Черновик, дающий заданную eGFR CKD-EPI 2009 (мужчина 60 лет). */
-export function withEgfr(target: number, patch: MeasurementDraft = {}): MeasurementDraft {
-  return { ...patch, creatinine: { value: scrForEgfr2009(target, 60, 'male'), unit: 'mg/dL' }, ageYears: 60, sex: 'male' };
-}
+export { scrForEgfr2009, withEgfr } from '../src/core/verification';
