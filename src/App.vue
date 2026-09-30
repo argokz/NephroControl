@@ -6,11 +6,12 @@ import * as store from './storage/db';
 import AboutView from './ui/AboutView.vue';
 import GithubLink from './ui/GithubLink.vue';
 import HistoryView from './ui/HistoryView.vue';
+import LabCompareView from './ui/LabCompareView.vue';
 import MeasurementForm from './ui/MeasurementForm.vue';
 import PatientPanel from './ui/PatientPanel.vue';
 import ResultView from './ui/ResultView.vue';
 
-type Tab = 'calc' | 'history' | 'about';
+type Tab = 'calc' | 'history' | 'lab' | 'about';
 
 const patients = ref<Patient[]>([]);
 const selectedId = ref<string | null>(null);
@@ -156,6 +157,9 @@ onMounted(reloadPatients);
           <span class="tab-long">История и динамика</span><span class="tab-short">История</span>
           <span v-if="patient" class="count">{{ records.length }}</span>
         </button>
+        <button type="button" role="tab" :aria-selected="tab === 'lab'" :class="{ active: tab === 'lab' }" @click="tab = 'lab'">
+          <span class="tab-long">Сверка с лабораторией</span><span class="tab-short">Сверка</span>
+        </button>
         <button
           type="button"
           role="tab"
@@ -187,6 +191,7 @@ onMounted(reloadPatients);
         </section>
       </div>
 
+      <KeepAlive><LabCompareView v-if="tab === 'lab'" /></KeepAlive>
       <AboutView v-if="tab === 'about'" />
       <HistoryView v-if="tab === 'history' && patient" :patient="patient" :records="records" @delete="deleteRecord" />
     </main>

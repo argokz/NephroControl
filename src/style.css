@@ -572,3 +572,24 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
   tr, .finding-group { break-inside: avoid; }
   th { position: static; }
 }
+
+/* сверка с лабораторией */
+.lab-compare { display: flex; flex-direction: column; gap: 14px; container-type: inline-size; }
+.lab-input { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.lab-input details summary { cursor: pointer; font-weight: 500; }
+.lab-input textarea { width: 100%; margin-top: 8px; font: 0.85rem/1.4 ui-monospace, Consolas, monospace; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); resize: vertical; }
+.lab-input details .actions { margin-top: 8px; }
+.lab-status { display: flex; gap: 6px 16px; flex-wrap: wrap; align-items: center; font-size: 0.9rem; }
+.link-button { border: 0; background: none; padding: 0; min-height: 0; color: var(--accent); text-decoration: underline; cursor: pointer; font: inherit; }
+.lab-errors ul { margin: 6px 0 0; padding-left: 18px; font-size: 0.85rem; max-height: 240px; overflow: auto; }
+.lab-errors summary { cursor: pointer; color: var(--important); }
+.lab-summary th.closer { color: var(--accent); }
+.lab-summary td:first-child { color: var(--muted); }
+.lab-formula { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.lab-formula .seg { min-width: 260px; }
+.lab-formula .threshold { width: 80px; }
+.confusion td.diag { background: var(--accent-soft); font-weight: 600; }
+.confusion td.off { background: var(--important-soft); color: var(--important); font-weight: 600; }
+.confusion th { position: static; }
+@container (max-width: 620px) { .lab-input { grid-template-columns: 1fr; } .lab-input .span-2 { grid-column: auto; } }
+.lab-input input[type='file'] { padding-block: 6px; }
